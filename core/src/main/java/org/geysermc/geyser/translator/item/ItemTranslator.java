@@ -153,11 +153,16 @@ public final class ItemTranslator {
             session.getGeyser().getLogger().debug("ItemMapping returned air: " + javaId);
             return ItemData.builder();
         }
-        return translateToBedrock(session, Registries.JAVA_ITEMS.get().get(javaId), bedrockItem, count, components);
+        return translateToBedrock(session, Registries.JAVA_ITEMS.get().get(javaId), bedrockItem, count, components, false);
     }
 
     @NonNull
     public static ItemData translateToBedrock(GeyserSession session, ItemStack stack) {
+        return translateToBedrock(session, stack, false);
+    }
+
+    @NonNull
+    public static ItemData translateToBedrock(GeyserSession session, ItemStack stack, boolean renderAsItem) {
         if (InventoryUtils.isEmpty(stack)) {
             return ItemData.AIR;
         }
@@ -168,12 +173,17 @@ public final class ItemTranslator {
             return ItemData.AIR;
         }
         // Java item needs to be loaded separately. The mapping for tipped arrow would
-        return translateToBedrock(session, Registries.JAVA_ITEMS.get().get(stack.getId()), bedrockItem, stack.getAmount(), stack.getDataComponentsPatch())
+        return translateToBedrock(session, Registries.JAVA_ITEMS.get().get(stack.getId()), bedrockItem, stack.getAmount(), stack.getDataComponentsPatch(), renderAsItem)
                 .build();
     }
 
     @NonNull
     public static ItemData translateToBedrock(GeyserSession session, @NonNull GeyserItemStack stack) {
+        return translateToBedrock(session, stack, false);
+    }
+
+    @NonNull
+    public static ItemData translateToBedrock(GeyserSession session, @NonNull GeyserItemStack stack, boolean renderAsItem) {
         if (stack.isEmpty()) {
             return ItemData.AIR;
         }
@@ -184,11 +194,11 @@ public final class ItemTranslator {
             return ItemData.AIR;
         }
 
-        return translateToBedrock(session, stack.asItem(), bedrockItem, stack.getAmount(), stack.getComponents())
+        return translateToBedrock(session, stack.asItem(), bedrockItem, stack.getAmount(), stack.getComponents(), renderAsItem)
                 .build();
     }
 
-    public static ItemData.@NonNull Builder translateToBedrock(GeyserSession session, Item javaItem, ItemMapping bedrockItem, int count, @Nullable DataComponents customComponents) {
+    public static ItemData.@NonNull Builder translateToBedrock(GeyserSession session, Item javaItem, ItemMapping bedrockItem, int count, @Nullable DataComponents customComponents, boolean renderAsItem) {
         BedrockItemBuilder nbtBuilder = new BedrockItemBuilder();
 
         // Populates default components that aren't sent over the network
@@ -244,10 +254,14 @@ public final class ItemTranslator {
         ItemData.Builder builder = javaItem.translateToBedrock(session, count, components, bedrockItem, session.getItemMappings());
         // Finalize the Bedrock NBT
         builder.tag(nbtBuilder.build());
+        // Tracks whether this item resolved to a custom block override (either a block-item
+        // override or a furniture item_model). Used below to decide the translateCustomItem call.
+        boolean hasCustomBlock = false;
         if (bedrockItem.isBlock()) {
             CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
                     bedrockItem.getJavaItem().javaIdentifier(), null);
             if (customBlockData != null) {
+                hasCustomBlock = true;
                 translateCustomBlock(customBlockData, session, builder);
             } else {
                 builder.blockDefinition(bedrockItem.getBedrockBlockDefinition());
@@ -260,6 +274,7 @@ public final class ItemTranslator {
             if (itemModel != null) {
                 var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
                 if (customBlock != null) {
+                    hasCustomBlock = true;
                     translateCustomBlock(customBlock, session, builder);
                 }
             }
@@ -269,7 +284,13 @@ public final class ItemTranslator {
             translatePlayerHead(session, components.get(DataComponentTypes.PROFILE), builder);
         }
 
-        translateCustomItem(session, count, components, builder, bedrockItem);
+        // Skip the custom item definition only for a custom-block item that is NOT being rendered as
+        // a flat item - such items should render as their custom block instead. Items without a
+        // custom block, and any context requesting an item render (armor stand heads, display
+        // entities), still get the custom item.
+        if (renderAsItem || !hasCustomBlock) {
+            translateCustomItem(session, count, components, builder, bedrockItem);
+        }
 
         // Translate the canDestroy and canPlaceOn Java components
         AdventureModePredicate canDestroy = components.get(DataComponentTypes.CAN_BREAK);
@@ -553,9 +574,15 @@ public final class ItemTranslator {
         ItemMapping mapping = itemStack.asItem().toBedrockDefinition(itemStack.getAllComponents(), session.getItemMappings());
 
         ItemDefinition itemDefinition = mapping.getBedrockDefinition();
+        // Mirror translateToBedrock: when the item resolves to a custom block override, that block
+        // definition wins and the custom item definition must NOT override it. Otherwise this method
+        // (used to validate the held item) would expect a different definition than what was actually
+        // sent to the client, causing held-item desyncs that drop block interactions.
+        boolean hasCustomBlock = false;
         CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
                 mapping.getJavaItem().javaIdentifier(), null);
         if (customBlockData != null) {
+            hasCustomBlock = true;
             itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlockData);
         }
 
@@ -564,6 +591,7 @@ public final class ItemTranslator {
         if (itemModel != null) {
             var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
             if (customBlock != null) {
+                hasCustomBlock = true;
                 itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlock);
             }
         }
@@ -575,13 +603,13 @@ public final class ItemTranslator {
             }
         }
 
-        ItemDefinition definition = CustomItemTranslator.getCustomItem(session, itemStack.getAmount(), itemStack.getAllComponents(), mapping);
-        if (definition == null) {
-            // No custom item
-            return itemDefinition;
-        } else {
-            return definition;
+        if (!hasCustomBlock) {
+            ItemDefinition definition = CustomItemTranslator.getCustomItem(session, itemStack.getAmount(), itemStack.getAllComponents(), mapping);
+            if (definition != null) {
+                return definition;
+            }
         }
+        return itemDefinition;
     }
 
     /**
