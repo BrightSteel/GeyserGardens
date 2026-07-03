@@ -424,6 +424,18 @@ public class CustomBlockRegistryPopulator {
                 boneVisibility.forEach(boneVisibilityBuilder::putString);
                 geometryBuilder.putCompound("bone_visibility", boneVisibilityBuilder.build());
             }
+            String cullingLayer = geometryComponent.cullingLayer();
+            if (cullingLayer != null) {
+                geometryBuilder.putString("culling_layer", cullingLayer);
+            }
+            String culling = geometryComponent.culling();
+            if (culling != null) {
+                geometryBuilder.putString("culling", culling);
+            }
+            String cullingShape = geometryComponent.cullingShape();
+            if (cullingShape != null) {
+                geometryBuilder.putString("culling_shape", cullingShape);
+            }
             builder.putCompound("minecraft:geometry", geometryBuilder.build());
         }
 

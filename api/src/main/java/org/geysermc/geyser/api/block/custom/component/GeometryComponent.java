@@ -50,6 +50,30 @@ public interface GeometryComponent {
     @Nullable Map<String, String> boneVisibility();
 
     /**
+     * Gets the culling layer of the geometry
+     *
+     * @return The culling layer of the geometry.
+     * @since 2.10.1
+     */
+    @Nullable String cullingLayer();
+
+    /**
+     * Gets the culling rules identifier of the geometry
+     *
+     * @return The culling rules identifier of the geometry.
+     * @since 2.10.1
+     */
+    @Nullable String culling();
+
+    /**
+     * Gets the culling shape of the geometry
+     *
+     * @return The culling shape of the geometry.
+     * @since 2.10.1
+     */
+    @Nullable String cullingShape();
+
+    /**
      * Creates a builder for GeometryComponent
      *
      * @return a builder for GeometryComponent.
@@ -62,6 +86,33 @@ public interface GeometryComponent {
         Builder identifier(String identifier);
 
         Builder boneVisibility(@Nullable Map<String, String> boneVisibility);
+
+        /**
+         * Sets the culling layer of the geometry
+         *
+         * @param cullingLayer the culling layer identifier
+         * @return the builder
+         * @since 2.10.1
+         */
+        Builder cullingLayer(@Nullable String cullingLayer);
+
+        /**
+         * Sets the culling rules identifier of the geometry
+         *
+         * @param culling the culling rules identifier
+         * @return the builder
+         * @since 2.10.1
+         */
+        Builder culling(@Nullable String culling);
+
+        /**
+         * Sets the culling shape of the geometry
+         *
+         * @param cullingShape the culling shape identifier
+         * @return the builder
+         * @since 2.10.1
+         */
+        Builder cullingShape(@Nullable String cullingShape);
 
         GeometryComponent build();
     }

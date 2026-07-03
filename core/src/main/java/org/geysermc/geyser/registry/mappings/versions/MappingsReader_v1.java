@@ -471,6 +471,15 @@ public class MappingsReader_v1 extends MappingsReader {
                         geometryBuilder.boneVisibility(boneVisibilityMap);
                     }
                 }
+                if (geometry.has("culling_layer")) {
+                    geometryBuilder.cullingLayer(geometry.get("culling_layer").getAsString());
+                }
+                if (geometry.has("culling")) {
+                    geometryBuilder.culling(geometry.get("culling").getAsString());
+                }
+                if (geometry.has("culling_shape")) {
+                    geometryBuilder.cullingShape(geometry.get("culling_shape").getAsString());
+                }
                 builder.geometry(geometryBuilder.build());
             }
         }

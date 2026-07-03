@@ -36,10 +36,16 @@ import java.util.Map;
 public class GeyserGeometryComponent implements GeometryComponent {
     private final String identifier;
     private final Map<String, String> boneVisibility;
+    private final String cullingLayer;
+    private final String culling;
+    private final String cullingShape;
 
     GeyserGeometryComponent(Builder builder) {
         this.identifier = builder.identifier;
         this.boneVisibility = builder.boneVisibility;
+        this.cullingLayer = builder.cullingLayer;
+        this.culling = builder.culling;
+        this.cullingShape = builder.cullingShape;
     }
 
     @Override
@@ -52,9 +58,27 @@ public class GeyserGeometryComponent implements GeometryComponent {
         return boneVisibility;
     }
 
+    @Override
+    public @Nullable String cullingLayer() {
+        return cullingLayer;
+    }
+
+    @Override
+    public @Nullable String culling() {
+        return culling;
+    }
+
+    @Override
+    public @Nullable String cullingShape() {
+        return cullingShape;
+    }
+
     public static class Builder implements GeometryComponent.Builder {
         private String identifier;
         private Map<String, String> boneVisibility;
+        private String cullingLayer;
+        private String culling;
+        private String cullingShape;
 
         @Override
         public Builder identifier(@NonNull String identifier) {
@@ -65,6 +89,24 @@ public class GeyserGeometryComponent implements GeometryComponent {
         @Override
         public Builder boneVisibility(@Nullable Map<String, String> boneVisibility) {
             this.boneVisibility = boneVisibility;
+            return this;
+        }
+
+        @Override
+        public Builder cullingLayer(@Nullable String cullingLayer) {
+            this.cullingLayer = cullingLayer;
+            return this;
+        }
+
+        @Override
+        public Builder culling(@Nullable String culling) {
+            this.culling = culling;
+            return this;
+        }
+
+        @Override
+        public Builder cullingShape(@Nullable String cullingShape) {
+            this.cullingShape = cullingShape;
             return this;
         }
 
