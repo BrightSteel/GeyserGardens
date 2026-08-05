@@ -273,7 +273,7 @@ public final class ItemTranslator {
             String itemModel = itemModelData == null ? null : itemModelData.toString();
             if (itemModel != null) {
                 var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
-                if (customBlock != null) {
+                if (customBlock != null && !FurnitureItemConverter.ICON_ONLY_ITEM_MODELS.contains(itemModel)) {
                     hasCustomBlock = true;
                     translateCustomBlock(customBlock, session, builder);
                 }
@@ -590,7 +590,7 @@ public final class ItemTranslator {
         String itemModel = itemModelData == null ? null : itemModelData.toString();
         if (itemModel != null) {
             var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
-            if (customBlock != null) {
+            if (customBlock != null && !FurnitureItemConverter.ICON_ONLY_ITEM_MODELS.contains(itemModel)) {
                 hasCustomBlock = true;
                 itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlock);
             }

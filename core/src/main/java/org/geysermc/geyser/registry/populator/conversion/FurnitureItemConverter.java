@@ -53,15 +53,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class FurnitureItemConverter {
 
     public static Map<String, CustomBlockData> CUSTOM_NAME_TO_BLOCK = new HashMap<>();
     public static Map<String, CustomBlockData> ITEM_MODEL_TO_BLOCK_DATA = new HashMap<>();
+    // item_models whose inventory item should render as the flat icon instead of the custom block
+    // (BedrockBlock.send_block_as_item = false, e.g. doors).
+    public static Set<String> ICON_ONLY_ITEM_MODELS = new HashSet<>();
 
     public static List<CustomBlockData> buildGeyserCustomBlocks() {
 //        var componentBuilder = CustomBlockComponents.builder()
@@ -103,14 +108,14 @@ public class FurnitureItemConverter {
 
         return GardensFurniture.itemRegistry.getCustomItems().values()
             .stream()
-            .filter(customItem -> customItem instanceof CustomPlaceableItem)
-            .map(placeable -> toGeyserBlock((CustomPlaceableItem) placeable))
+//            .filter(customItem -> customItem instanceof CustomPlaceableItem)
+            .map(FurnitureItemConverter::toGeyserBlock)
             .filter(Objects::nonNull)
             .toList();
     }
 
     @Nullable
-    private static CustomBlockData toGeyserBlock(CustomPlaceableItem customItem) {
+    private static CustomBlockData toGeyserBlock(CustomItem customItem) {
         var bedrockBlock = customItem.getBedrockBlock();
         if (bedrockBlock == null) {
             return null;
@@ -119,6 +124,9 @@ public class FurnitureItemConverter {
         var itemModel = customItem.getComponents() == null ? null : customItem.getComponents().getItem_model();
         if (itemModel != null) {
             ITEM_MODEL_TO_BLOCK_DATA.put(itemModel, customBlockData);
+            if (!bedrockBlock.isSendBlockAsItem()) {
+                ICON_ONLY_ITEM_MODELS.add(itemModel);
+            }
         }
         CUSTOM_NAME_TO_BLOCK.put(customItem.getIdentifier(), customBlockData);
         return customBlockData;
@@ -128,12 +136,14 @@ public class FurnitureItemConverter {
 //        new CustomBlockState
 //    }
 
-    private static CustomBlockData buildGeyserBlock(CustomPlaceableItem placeableItem, BedrockBlock bedrockBlock) {
+    private static CustomBlockData buildGeyserBlock(CustomItem customItem, BedrockBlock bedrockBlock) {
         var blockData = new GeyserCustomBlockData.Builder()
-            .name(placeableItem.getIdentifier())
+            .name(customItem.getIdentifier())
             .components(bedrockBlock.toCustomBlockComponents());
-        placeableItem.onBuildGeyserBlockData(blockData);
-        blockData.permutations(placeableItem.getPermutations());
+        if (customItem instanceof CustomPlaceableItem placeableItem) {
+            placeableItem.onBuildGeyserBlockData(blockData);
+            blockData.permutations(placeableItem.getPermutations());
+        }
         return blockData.build();
     }
 
