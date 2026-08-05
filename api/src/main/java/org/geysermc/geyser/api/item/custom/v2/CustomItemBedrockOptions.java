@@ -25,12 +25,15 @@
 
 package org.geysermc.geyser.api.item.custom.v2;
 
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.common.returnsreceiver.qual.This;
+import org.checkerframework.common.value.qual.IntRange;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.api.util.Identifier;
 import org.jspecify.annotations.Nullable;
 
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -103,6 +106,16 @@ public interface CustomItemBedrockOptions {
     Set<Identifier> tags();
 
     /**
+     * Returns the default colour of the item if it is dyeable, and if not, an empty optional.
+     *
+     * <p>The client allows dyeing dyeable items using any of the vanilla dyes in a crafting table.</p>
+     *
+     * @return the default colour of the item if it is dyeable, and if not, an empty optional
+     * @since 2.10.1
+     */
+    OptionalInt dyeable();
+
+    /**
      * Creates a new builder for custom item bedrock options.
      *
      * @return a new builder
@@ -160,7 +173,7 @@ public interface CustomItemBedrockOptions {
          * @since 2.9.3
          */
         @This
-        Builder protectionValue(int protectionValue);
+        Builder protectionValue(@NonNegative int protectionValue);
 
         /**
          * Sets the item's creative category.
@@ -204,6 +217,39 @@ public interface CustomItemBedrockOptions {
          */
         @This
         Builder tags(@Nullable Set<Identifier> tags);
+
+        /**
+         * Marks the item as dyeable, and sets the default color of the item.
+         *
+         * @param defaultColor the default color of the item
+         * @see CustomItemBedrockOptions#dyeable()
+         * @return this builder
+         * @since 2.10.1
+         */
+        @This
+        Builder dyeable(@IntRange(from = 0x000000, to = 0xFFFFFF) int defaultColor);
+
+        /**
+         * Marks the item as dyeable, and sets the default color of the item.
+         *
+         * @param defaultRed the red component of the default color of the item
+         * @param defaultGreen the green component of the default color of the item
+         * @param defaultBlue the blue component of the default color of the item
+         * @see CustomItemBedrockOptions#dyeable()
+         * @return this builder
+         * @since 2.10.1
+         */
+        @This
+        default Builder dyeable(@IntRange(from = 0, to = 255) int defaultRed, @IntRange(from = 0, to = 255) int defaultGreen, @IntRange(from = 0, to = 255) int defaultBlue) {
+            if (defaultRed < 0 || defaultRed > 255) {
+                throw new IllegalArgumentException("Red component must be between 0 and 255, was: " + defaultRed);
+            } else if (defaultGreen < 0 || defaultGreen > 255) {
+                throw new IllegalArgumentException("Green component must be between 0 and 255, was: " + defaultGreen);
+            } else if (defaultBlue < 0 || defaultBlue > 255) {
+                throw new IllegalArgumentException("Blue component must be between 0 and 255, was: " + defaultBlue);
+            }
+            return dyeable((defaultRed << 16) | (defaultGreen << 8) | defaultBlue);
+        }
 
         /**
          * Creates the custom item bedrock options.
