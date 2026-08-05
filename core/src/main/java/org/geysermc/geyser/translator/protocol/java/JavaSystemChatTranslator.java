@@ -39,6 +39,7 @@ import org.geysermc.geyser.text.GeyserLocale;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
 import org.geysermc.geyser.translator.text.MessageTranslator;
+import org.geysermc.geyser.translator.text.TagBadges;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket;
 
 @Translator(packet = ClientboundSystemChatPacket.class)
@@ -91,9 +92,11 @@ public class JavaSystemChatTranslator extends PacketTranslator<ClientboundSystem
 
         textPacket.setNeedsTranslation(false);
         if (packet.isOverlay()) {
+            // overlay = action bar (non-chat) — leave reserved glyphs untouched
             textPacket.setMessage(ChatColor.WHITE + MessageTranslator.convertMessage(packet.getContent(), session.locale()));
         } else {
-            textPacket.setMessage(MessageTranslator.convertMessage(packet.getContent(), session.locale()));
+            // Gardens fork: swap Java tag badge glyphs for their Bedrock emoji equivalents (chat only)
+            textPacket.setMessage(TagBadges.apply(MessageTranslator.convertMessage(packet.getContent(), session.locale())));
         }
 
         if (session.isSentSpawnPacket()) {

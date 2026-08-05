@@ -447,13 +447,14 @@ public class MessageTranslator {
                 args.add(message);
             }
             withDecoration.arguments(args);
-            textPacket.setMessage(MessageTranslator.convertMessage(withDecoration.build(), session.locale()));
+            // Gardens fork: swap Java tag badge glyphs for their Bedrock emoji equivalents (chat only)
+            textPacket.setMessage(TagBadges.apply(MessageTranslator.convertMessage(withDecoration.build(), session.locale())));
         } else {
             session.getGeyser().getLogger().debug("Likely illegal chat type detection found.");
             if (session.getGeyser().config().debugMode()) {
                 Thread.dumpStack();
             }
-            textPacket.setMessage(MessageTranslator.convertMessage(message, session.locale()));
+            textPacket.setMessage(TagBadges.apply(MessageTranslator.convertMessage(message, session.locale())));
         }
 
         session.sendUpstreamPacket(textPacket);

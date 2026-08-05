@@ -32,6 +32,7 @@ import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.registry.type.ItemMapping;
+import org.geysermc.geyser.translator.text.TagBadges;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,10 +136,15 @@ public final class BedrockItemBuilder {
         if (customName != null || validLore) {
             NbtMapBuilder display = NbtMap.builder();
             if (customName != null) {
-                display.putString("Name", customName);
+                // Gardens fork: swap Java tag badge glyphs for their Bedrock emoji equivalents
+                display.putString("Name", TagBadges.apply(customName));
             }
             if (validLore) {
-                display.putList("Lore", NbtType.STRING, lore);
+                List<String> mappedLore = new ArrayList<>(lore.size());
+                for (String line : lore) {
+                    mappedLore.add(TagBadges.apply(line));
+                }
+                display.putList("Lore", NbtType.STRING, mappedLore);
             }
             getOrCreateNbt().put("display", display.build());
         }
