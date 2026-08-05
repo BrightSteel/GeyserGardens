@@ -37,7 +37,7 @@ import org.cloudburstmc.protocol.bedrock.packet.SetEntityLinkPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.entity.type.player.GeyserPlayerEntity;
-import org.geysermc.geyser.entity.EntityDefinitions;
+import org.geysermc.geyser.entity.VanillaEntities;
 import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
 import org.geysermc.geyser.entity.type.Entity;
@@ -80,7 +80,7 @@ public class PlayerEntity extends AvatarEntity implements GeyserPlayerEntity {
         try {
             this.textures = profile.getTextures(true);
         } catch (Exception e) {
-            GeyserImpl.getInstance().getLogger().debug("Error loading textures for player!" + profile, e);
+            GeyserImpl.getInstance().getLogger().debug("Error loading textures for profile %s! Got: %s", profile, e);
             this.textures = null;
         }
     }
@@ -109,7 +109,9 @@ public class PlayerEntity extends AvatarEntity implements GeyserPlayerEntity {
         // send the player list entry after fetching the skin sent by the Java server.
         if (PlayerListUtils.shouldLimitPlayerListEntries(session)) {
             PlayerListPacket packet = new PlayerListPacket();
-            packet.getEntries().add(new PlayerListPacket.Entry(getTabListUuid()));
+            PlayerListPacket.Entry entry = new PlayerListPacket.Entry(getTabListUuid());
+            entry.setAction(PlayerListPacket.Action.REMOVE);
+            packet.getEntries().add(entry);
             packet.setAction(PlayerListPacket.Action.REMOVE);
             session.sendUpstreamPacket(packet);
 
@@ -139,8 +141,10 @@ public class PlayerEntity extends AvatarEntity implements GeyserPlayerEntity {
     }
 
     public void sendPlayer() {
-        if (session.getEntityCache().getPlayerEntity(uuid) == null)
+        if (session.getEntityCache().getPlayerEntity(uuid) == null) {
+            GeyserImpl.getInstance().getLogger().warning("Attempted to spawn player, but player could not be found in entity cache!");
             return;
+        }
 
         session.getEntityCache().spawnEntity(this);
     }
@@ -196,14 +200,21 @@ public class PlayerEntity extends AvatarEntity implements GeyserPlayerEntity {
                 return;
             }
             // The parrot is a separate entity in Bedrock, but part of the player entity in Java
-            EntitySpawnContext context = EntitySpawnContext.inherited(session, EntityDefinitions.PARROT, this, position);
+            EntitySpawnContext context = EntitySpawnContext.inherited(session, VanillaEntities.PARROT, this, position());
+            if (!context.callParrotEvent(this, variant.getAsInt(), !isLeft)) {
+                GeyserImpl.getInstance().getLogger().debug(session, "Cancelled parrot spawn event!");
+                return;
+            }
             ParrotEntity parrot = new ParrotEntity(context);
+            parrot.getMetadata().put(EntityDataTypes.VARIANT, variant.getAsInt());
+            if (context.consumers() != null) {
+                context.consumers().forEach(consumer -> consumer.accept(parrot));
+            }
             parrot.spawnEntity();
-            parrot.getDirtyMetadata().put(EntityDataTypes.VARIANT, variant.getAsInt());
             // Different position whether the parrot is left or right
             float offset = isLeft ? 0.4f : -0.4f;
-            parrot.getDirtyMetadata().put(EntityDataTypes.SEAT_OFFSET, Vector3f.from(offset, -0.22, -0.1));
-            parrot.getDirtyMetadata().put(EntityDataTypes.SEAT_LOCK_RIDER_ROTATION, true);
+            parrot.getMetadata().put(EntityDataTypes.SEAT_OFFSET, Vector3f.from(offset, -0.22, -0.1));
+            parrot.getMetadata().put(EntityDataTypes.SEAT_LOCK_RIDER_ROTATION, true);
             parrot.updateBedrockMetadata();
             SetEntityLinkPacket linkPacket = new SetEntityLinkPacket();
             EntityLinkData.Type type = isLeft ? EntityLinkData.Type.RIDER : EntityLinkData.Type.PASSENGER;
