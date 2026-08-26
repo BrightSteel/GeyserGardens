@@ -45,6 +45,7 @@ import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.Properties;
@@ -336,7 +337,7 @@ public class BlockBreakHandler {
             this.serverSideBlockBreaking = false;
             if (BlockRegistries.NON_VANILLA_BLOCK_IDS.get().get(state.javaId()) || blockStateOverride != null ||
                 customItem != null || session.getItemMappings().getNonVanillaCustomItemIds().contains(item.getJavaId()) || (skull != null && skull.getBlockDefinition() != null) ||
-                session.getBlockMappings().getBedrockBlockId(session, position, state.javaId()) != -1) {
+                GardensBlockHook.bedrockBlockId(session, position, state.javaId()) != -1) {
                 this.serverSideBlockBreaking = true;
             }
 

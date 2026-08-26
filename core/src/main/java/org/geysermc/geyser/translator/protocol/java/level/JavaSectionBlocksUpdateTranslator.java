@@ -30,6 +30,7 @@ import org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry.MessageType;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateSubChunkBlocksPacket;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
@@ -106,14 +107,10 @@ public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<Clientbo
             // Skull is gone
             session.getSkullCache().removeSkull(entry.getPosition());
 
-            // Furniture host blocks (note block, leaves, etc.) are plain Block instances, so they don't take the
-            // updateBlock() branch above. Apply the custom-block override here too, otherwise they revert to vanilla
-            // whenever a change arrives via a section update instead of a single block update.
-            var definition = session.getGeyser().getWorldManager().getBedrockBlockOverride(session,
-                entry.getPosition().getX(), entry.getPosition().getY(), entry.getPosition().getZ());
-            if (definition == null) {
-                definition = session.getBlockMappings().getBedrockBlock(blockState);
-            }
+            // Gardens fork: furniture host blocks (note block, leaves, etc.) are plain Block instances, so
+            // they don't take the updateBlock() branch above. Apply the custom-block override here too,
+            // otherwise they revert to vanilla whenever a change arrives via a section update.
+            var definition = GardensBlockHook.orOverride(session, entry.getPosition(), blockState);
 
             updateSubChunkBlocksPacket.getStandardBlocks().add(new org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry(
                 entry.getPosition(),

@@ -62,11 +62,11 @@ import org.geysermc.geyser.network.GameProtocol;
 import org.geysermc.geyser.registry.mappings.BuiltInMappings;
 import org.geysermc.geyser.registry.mappings.MappingsConfigReader;
 import org.geysermc.geyser.registry.mappings.MappingsType;
-import org.geysermc.geyser.registry.populator.conversion.FurnitureItemConverter;
 import org.geysermc.geyser.registry.populator.custom.CustomItemContext;
 import org.geysermc.geyser.registry.type.GeyserMappingItem;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.registry.type.NonVanillaItemRegistration;
+import org.geysermc.geyser.translator.item.GardensItemHook;
 import org.geysermc.geyser.util.MinecraftKey;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.AttackRange;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.Consumable;
@@ -124,12 +124,6 @@ public class CustomItemRegistryPopulator {
                 GeyserImpl.getInstance().getLogger().error("Not registering custom item definition (bedrock identifier=" + item.bedrockIdentifier() + "): " + exception.getMessage());
             }
         });
-
-//        FurnitureItemConverter.registerItems((key, item) -> {
-//            if (CustomItemRegistryPopulator.initialCheck(key, item, items)) {
-//                customItems.get(key).add(item);
-//            }
-//        });
 
         GeyserImpl.getInstance().eventBus().fire(new GeyserDefineCustomItemsEventImpl(customItems, nonVanillaCustomItems) {
 
@@ -307,16 +301,7 @@ public class CustomItemRegistryPopulator {
                 .build());
         }
 
-        context.definition().bedrockOptions().dyeable().ifPresent(defaultColor -> {
-            // Please note that we are not including this component by default for items that override vanilla dyeable items, like leather armour
-            // This is because on Java, dyeable items are defined through recipes. As such, we don't know at this time whether the vanilla item actually is a
-            // dyeable: it could've been removed from the recipe!
-            // This unfortunately also applies to vanilla items that have been made dyeable through a nice recipe: again, we don't know about this recipe's existance here.
-            // As such, we have to rely on users putting this component in their mappings.
-            componentBuilder.putCompound("minecraft:dyeable", NbtMap.builder()
-                .putIntArray("default_color", new int[]{(defaultColor & 0xFF0000) >> 16, (defaultColor & 0x00FF00) >> 8, defaultColor & 0xFF})
-                .build());
-        });
+        GardensItemHook.applyDyeable(componentBuilder, context.definition().bedrockOptions().dyeable()); // Gardens fork
 
         AttackRange attackRange = context.components().getOrDefault(DataComponentTypes.ATTACK_RANGE, DEFAULT_ATTACK_RANGE);
 

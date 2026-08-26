@@ -140,11 +140,8 @@ public final class BedrockItemBuilder {
                 display.putString("Name", TagBadges.apply(customName));
             }
             if (validLore) {
-                List<String> mappedLore = new ArrayList<>(lore.size());
-                for (String line : lore) {
-                    mappedLore.add(TagBadges.apply(line));
-                }
-                display.putList("Lore", NbtType.STRING, mappedLore);
+                // Gardens fork: swap Java tag badge glyphs for their Bedrock emoji equivalents
+                display.putList("Lore", NbtType.STRING, TagBadges.applyAll(lore));
             }
             getOrCreateNbt().put("display", display.build());
         }

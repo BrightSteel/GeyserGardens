@@ -25,10 +25,6 @@
 
 package org.geysermc.geyser.registry.populator;
 
-import com.gardensmc.gardensfurniture.GardensFurniture;
-import com.gardensmc.gardensfurniture.custom.block.CustomBlock;
-import com.gardensmc.gardensfurniture.custom.item.CustomPlaceableItem;
-import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -55,6 +51,7 @@ import org.geysermc.geyser.api.block.custom.property.CustomBlockProperty;
 import org.geysermc.geyser.api.block.custom.property.PropertyType;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.api.util.CreativeCategory;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.GeyserCustomBlockState;
 import org.geysermc.geyser.level.block.type.Block;
@@ -75,7 +72,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -423,18 +419,7 @@ public class CustomBlockRegistryPopulator {
                 boneVisibility.forEach(boneVisibilityBuilder::putString);
                 geometryBuilder.putCompound("bone_visibility", boneVisibilityBuilder.build());
             }
-            String cullingLayer = geometryComponent.cullingLayer();
-            if (cullingLayer != null) {
-                geometryBuilder.putString("culling_layer", cullingLayer);
-            }
-            String culling = geometryComponent.culling();
-            if (culling != null) {
-                geometryBuilder.putString("culling", culling);
-            }
-            String cullingShape = geometryComponent.cullingShape();
-            if (cullingShape != null) {
-                geometryBuilder.putString("culling_shape", cullingShape);
-            }
+            GardensBlockHook.applyCulling(geometryBuilder, geometryComponent); // Gardens fork
             builder.putCompound("minecraft:geometry", geometryBuilder.build());
         }
 

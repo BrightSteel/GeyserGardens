@@ -37,7 +37,6 @@ import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
-import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
@@ -51,7 +50,6 @@ import org.geysermc.geyser.item.type.PotionItem;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
-import org.geysermc.geyser.registry.populator.conversion.FurnitureItemConverter;
 import org.geysermc.geyser.registry.type.CustomSkull;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
@@ -254,31 +252,9 @@ public final class ItemTranslator {
         ItemData.Builder builder = javaItem.translateToBedrock(session, count, components, bedrockItem, session.getItemMappings());
         // Finalize the Bedrock NBT
         builder.tag(nbtBuilder.build());
-        // Tracks whether this item resolved to a custom block override (either a block-item
-        // override or a furniture item_model). Used below to decide the translateCustomItem call.
-        boolean hasCustomBlock = false;
-        if (bedrockItem.isBlock()) {
-            CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
-                    bedrockItem.getJavaItem().javaIdentifier(), null);
-            if (customBlockData != null) {
-                hasCustomBlock = true;
-                translateCustomBlock(customBlockData, session, builder);
-            } else {
-                builder.blockDefinition(bedrockItem.getBedrockBlockDefinition());
-            }
-        }
-
-        if (customComponents != null) {
-            var itemModelData = customComponents.get(DataComponentTypes.ITEM_MODEL);
-            String itemModel = itemModelData == null ? null : itemModelData.toString();
-            if (itemModel != null) {
-                var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
-                if (customBlock != null && !FurnitureItemConverter.ICON_ONLY_ITEM_MODELS.contains(itemModel)) {
-                    hasCustomBlock = true;
-                    translateCustomBlock(customBlock, session, builder);
-                }
-            }
-        }
+        // Gardens fork: resolve any custom block override (block-item override or furniture item_model);
+        // hasCustomBlock decides whether the flat custom item definition is skipped below.
+        boolean hasCustomBlock = GardensItemHook.applyCustomBlock(session, bedrockItem, customComponents, builder);
 
         if (bedrockItem.getJavaItem().equals(Items.PLAYER_HEAD)) {
             translatePlayerHead(session, components.get(DataComponentTypes.PROFILE), builder);
@@ -574,26 +550,14 @@ public final class ItemTranslator {
         ItemMapping mapping = itemStack.asItem().toBedrockDefinition(itemStack.getAllComponents(), session.getItemMappings());
 
         ItemDefinition itemDefinition = mapping.getBedrockDefinition();
-        // Mirror translateToBedrock: when the item resolves to a custom block override, that block
-        // definition wins and the custom item definition must NOT override it. Otherwise this method
-        // (used to validate the held item) would expect a different definition than what was actually
-        // sent to the client, causing held-item desyncs that drop block interactions.
-        boolean hasCustomBlock = false;
-        CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
-                mapping.getJavaItem().javaIdentifier(), null);
-        if (customBlockData != null) {
-            hasCustomBlock = true;
-            itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlockData);
-        }
-
-        var itemModelData = itemStack.getComponent(DataComponentTypes.ITEM_MODEL);
-        String itemModel = itemModelData == null ? null : itemModelData.toString();
-        if (itemModel != null) {
-            var customBlock = FurnitureItemConverter.ITEM_MODEL_TO_BLOCK_DATA.get(itemModel);
-            if (customBlock != null && !FurnitureItemConverter.ICON_ONLY_ITEM_MODELS.contains(itemModel)) {
-                hasCustomBlock = true;
-                itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlock);
-            }
+        // Gardens fork: mirror translateToBedrock - when the item resolves to a custom block override,
+        // that block definition wins and the custom item definition must NOT override it. Otherwise this
+        // method (used to validate the held item) would expect a different definition than what was
+        // actually sent to the client, causing held-item desyncs that drop block interactions.
+        ItemDefinition customBlockDefinition = GardensItemHook.customBlockItemDefinition(session, mapping, itemStack);
+        boolean hasCustomBlock = customBlockDefinition != null;
+        if (hasCustomBlock) {
+            itemDefinition = customBlockDefinition;
         }
 
         if (mapping.getJavaItem().equals(Items.PLAYER_HEAD)) {
@@ -682,7 +646,8 @@ public final class ItemTranslator {
     /**
      * Translates a custom block override
      */
-    private static void translateCustomBlock(CustomBlockData customBlockData, GeyserSession session, ItemData.Builder builder) {
+    // Gardens fork: package-private so GardensItemHook can reuse it.
+    static void translateCustomBlock(CustomBlockData customBlockData, GeyserSession session, ItemData.Builder builder) {
         ItemDefinition itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlockData);
         BlockDefinition blockDefinition = session.getBlockMappings().getCustomBlockStateDefinitions().get(customBlockData.defaultBlockState());
         builder.definition(itemDefinition);

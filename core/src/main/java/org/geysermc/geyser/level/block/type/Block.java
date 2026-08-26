@@ -33,6 +33,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.item.type.Item;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.BasicEnumProperty;
@@ -93,10 +94,8 @@ public class Block {
     public void updateBlock(GeyserSession session, BlockState state, Vector3i position) {
         checkForEmptySkull(session, state, position);
 
-        BlockDefinition definition = session.getGeyser().getWorldManager().getBedrockBlockOverride(session, position.getX(), position.getY(), position.getZ());
-        if (definition == null) {
-            definition = session.getBlockMappings().getBedrockBlock(state);
-        }
+        // Gardens fork: prefer a furniture custom-block override at this position, else the vanilla block.
+        BlockDefinition definition = GardensBlockHook.orOverride(session, position, state);
         sendBlockUpdatePacket(session, state, definition, position);
 
         if (this instanceof BedrockChunkWantsBlockEntityTag blockEntity) {

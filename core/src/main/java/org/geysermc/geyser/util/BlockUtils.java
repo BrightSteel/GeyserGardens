@@ -31,6 +31,7 @@ import org.cloudburstmc.protocol.bedrock.data.LevelEvent;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.packet.LevelEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.level.block.property.Property;
 import org.geysermc.geyser.level.block.type.Block;
@@ -199,7 +200,7 @@ public final class BlockUtils {
             case WEST -> levelEventPacket.setType(LevelEvent.PARTICLE_BREAK_BLOCK_WEST);
         }
         levelEventPacket.setPosition(position.toFloat());
-        levelEventPacket.setData(session.getBlockMappings().getBedrockBlockId(session, position, blockState.javaId()));
+        levelEventPacket.setData(GardensBlockHook.bedrockBlockId(session, position, blockState.javaId()));
         session.sendUpstreamPacket(levelEventPacket);
     }
 

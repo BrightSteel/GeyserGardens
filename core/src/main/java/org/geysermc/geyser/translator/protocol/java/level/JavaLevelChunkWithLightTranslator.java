@@ -41,6 +41,7 @@ import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.packet.LevelChunkPacket;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
 import org.geysermc.geyser.level.BedrockDimension;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
 import org.geysermc.geyser.level.chunk.BlockStorage;
@@ -142,7 +143,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                         int javaId = javaData.get(yzx);
                         BlockState state = BlockState.of(javaId);
                         var realBlockPos = ChunkUtil.getRealWorldBlockPos(packet.getX(), packet.getZ(), yzx);
-                        int bedrockId = session.getBlockMappings().getBedrockBlockId(session, realBlockPos, javaId);
+                        int bedrockId = GardensBlockHook.bedrockBlockId(session, realBlockPos, javaId);
                         int xzy = indexYZXtoXZY(yzx);
                         section.getBlockStorageArray()[0].setFullBlock(xzy, bedrockId);
 

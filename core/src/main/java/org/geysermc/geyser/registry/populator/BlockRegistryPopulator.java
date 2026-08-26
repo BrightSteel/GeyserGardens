@@ -54,6 +54,7 @@ import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
+import org.geysermc.geyser.gardens.GardensBlockHook;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
@@ -309,15 +310,8 @@ public final class BlockRegistryPopulator {
                     collisionIgnoredBlocks.add(javaRuntimeId);
                 }
 
-                var furnitureTypes = Set.of(
-                    Blocks.OAK_LEAVES, Blocks.BIRCH_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.CHERRY_LEAVES, Blocks.NOTE_BLOCK, Blocks.CAVE_VINES, Blocks.CAVE_VINES_PLANT, Blocks.TRIPWIRE, Blocks.OAK_SAPLING, Blocks.DARK_OAK_SAPLING,
-                    Blocks.WAXED_CUT_COPPER_STAIRS, Blocks.WAXED_EXPOSED_CUT_COPPER_STAIRS, Blocks.WAXED_WEATHERED_CUT_COPPER_STAIRS, Blocks.WAXED_OXIDIZED_CUT_COPPER_STAIRS,
-                    Blocks.WAXED_CUT_COPPER_SLAB, Blocks.WAXED_EXPOSED_CUT_COPPER_SLAB, Blocks.WAXED_WEATHERED_CUT_COPPER_SLAB, Blocks.WAXED_OXIDIZED_CUT_COPPER_SLAB,
-                    Blocks.WAXED_COPPER_DOOR, Blocks.WAXED_EXPOSED_COPPER_DOOR, Blocks.WAXED_WEATHERED_COPPER_DOOR, Blocks.WAXED_OXIDIZED_COPPER_DOOR,
-                    Blocks.WAXED_COPPER_TRAPDOOR, Blocks.WAXED_EXPOSED_COPPER_TRAPDOOR, Blocks.WAXED_WEATHERED_COPPER_TRAPDOOR, Blocks.WAXED_OXIDIZED_COPPER_TRAPDOOR,
-                    Blocks.BARRIER
-                );
-                if (furnitureTypes.contains(block)) {
+                // Gardens fork: track vanilla blocks that may host a furniture custom block.
+                if (GardensBlockHook.isFurnitureHost(block)) {
                     furnitureBlocks.add(javaRuntimeId);
                 }
 

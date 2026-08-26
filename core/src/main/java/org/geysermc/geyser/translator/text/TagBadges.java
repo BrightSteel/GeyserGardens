@@ -26,7 +26,9 @@
 package org.geysermc.geyser.translator.text;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -97,5 +99,16 @@ public final class TagBadges {
             sb.append(rep != null ? rep : new String(Character.toChars(cp)));
         });
         return sb.toString();
+    }
+
+    /**
+     * {@link #apply(String)} over every line of {@code lines}, returning a new list.
+     */
+    public static List<String> applyAll(List<String> lines) {
+        List<String> mapped = new ArrayList<>(lines.size());
+        for (String line : lines) {
+            mapped.add(apply(line));
+        }
+        return mapped;
     }
 }
