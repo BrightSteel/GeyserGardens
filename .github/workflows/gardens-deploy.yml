@@ -1,0 +1,61 @@
+name: Gardens Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: gardens-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'BrightSteel/GeyserGardens'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            25
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Geyser-Spigot
+        run: ./gradlew -I .github/gardens/java25.init.gradle :core:test :spigot:build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Geyser-Spigot
+          path: bootstrap/spigot/build/libs/Geyser-Spigot.jar
+
+      - name: Upload to server via SFTP
+        env:
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ vars.SFTP_PORT || '22' }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_REMOTE_PATH: ${{ vars.SFTP_REMOTE_PATH || 'plugins/Geyser-Spigot.jar' }}
+        run: |
+          sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SFTP_PORT" "$SFTP_HOST" >> ~/.ssh/known_hosts 2> /dev/null
+
+          # Upload under a temp name first so a dropped connection never leaves a half-written jar in place.
+          cat > batch.sftp <<EOF
+          put bootstrap/spigot/build/libs/Geyser-Spigot.jar ${SFTP_REMOTE_PATH}.uploading
+          -rm ${SFTP_REMOTE_PATH}
+          rename ${SFTP_REMOTE_PATH}.uploading ${SFTP_REMOTE_PATH}
+          EOF
+          sshpass -e sftp -P "$SFTP_PORT" -o BatchMode=no -b batch.sftp "$SFTP_USERNAME@$SFTP_HOST"

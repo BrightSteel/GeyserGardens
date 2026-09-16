@@ -1,0 +1,23 @@
+// Gardens: compile and test the Geyser projects on Java 25.
+// The vendored GardensFurniture jar in dependencies/ is Java 25 bytecode, but upstream Geyser targets 21.
+// Applied from CI via `./gradlew -I .github/gardens/java25.init.gradle ...` so no upstream build files change.
+gradle.projectsLoaded {
+    if (gradle.rootProject.name != 'geyser-parent') {
+        return
+    }
+    gradle.rootProject.allprojects {
+        afterEvaluate {
+            def toolchains = project.extensions.getByType(JavaToolchainService)
+            tasks.withType(JavaCompile).configureEach {
+                javaCompiler = toolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+                options.release = 25
+            }
+            tasks.withType(Javadoc).configureEach {
+                javadocTool = toolchains.javadocToolFor { languageVersion = JavaLanguageVersion.of(25) }
+            }
+            tasks.withType(Test).configureEach {
+                javaLauncher = toolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+            }
+        }
+    }
+}
