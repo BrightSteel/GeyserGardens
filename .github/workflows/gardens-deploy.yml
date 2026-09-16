@@ -44,7 +44,7 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SFTP_PASSWORD }}
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_PORT: ${{ vars.SFTP_PORT || '22' }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT || vars.SFTP_PORT || '22' }}
           SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
           SFTP_REMOTE_PATH: ${{ vars.SFTP_REMOTE_PATH || 'plugins/Geyser-Spigot.jar' }}
         run: |
