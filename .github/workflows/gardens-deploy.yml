@@ -46,14 +46,17 @@ jobs:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT || vars.SFTP_PORT || '22' }}
           SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
-          SFTP_REMOTE_PATH: ${{ vars.SFTP_REMOTE_PATH || 'plugins/Geyser-Spigot.jar' }}
+          # Paper's update folder: the server swaps it in on its next start, never under a running server
+          SFTP_REMOTE_PATH: ${{ vars.SFTP_REMOTE_PATH || 'plugins/update/Geyser-Spigot.jar' }}
         run: |
           sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SFTP_PORT" "$SFTP_HOST" >> ~/.ssh/known_hosts 2> /dev/null
 
           # Upload under a temp name first so a dropped connection never leaves a half-written jar in place.
+          # (the leading - lets the batch carry on when the update folder already exists)
           cat > batch.sftp <<EOF
+          -mkdir $(dirname "${SFTP_REMOTE_PATH}")
           put bootstrap/spigot/build/libs/Geyser-Spigot.jar ${SFTP_REMOTE_PATH}.uploading
           -rm ${SFTP_REMOTE_PATH}
           rename ${SFTP_REMOTE_PATH}.uploading ${SFTP_REMOTE_PATH}
