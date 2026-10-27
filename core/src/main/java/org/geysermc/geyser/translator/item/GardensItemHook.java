@@ -26,8 +26,6 @@
 package org.geysermc.geyser.translator.item;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.cloudburstmc.nbt.NbtMap;
-import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
@@ -38,8 +36,6 @@ import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
-
-import java.util.OptionalInt;
 
 /**
  * Gardens fork: item-side integration hooks, kept out of {@link ItemTranslator} so the touched core
@@ -66,7 +62,7 @@ public final class GardensItemHook {
         boolean hasCustomBlock = false;
         if (bedrockItem.isBlock()) {
             CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES
-                .getOrDefault(bedrockItem.getJavaItem().javaIdentifier(), null);
+                .getOrDefault(bedrockItem.getJavaItem().javaKey().asString(), null);
             if (customBlockData != null) {
                 hasCustomBlock = true;
                 ItemTranslator.translateCustomBlock(customBlockData, session, builder);
@@ -94,27 +90,12 @@ public final class GardensItemHook {
         CustomBlockData resolved = furnitureBlock(itemStack.getComponent(DataComponentTypes.ITEM_MODEL));
         if (resolved == null) {
             resolved = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES
-                .getOrDefault(mapping.getJavaItem().javaIdentifier(), null);
+                .getOrDefault(mapping.getJavaItem().javaKey().asString(), null);
         }
         if (resolved == null) {
             return null;
         }
         return session.getItemMappings().getCustomBlockItemDefinitions().get(resolved);
-    }
-
-    /**
-     * Adds the {@code minecraft:dyeable} component when the custom item declares a dyeable default
-     * colour.
-     *
-     * <p>Note this is not applied by default to items overriding vanilla dyeable items (e.g. leather
-     * armour): on Java, dyeability is defined through recipes, so we can't know here whether the vanilla
-     * item is still dyeable, or whether a vanilla item was made dyeable through a recipe. Users must put
-     * this component in their mappings explicitly.
-     */
-    public static void applyDyeable(NbtMapBuilder componentBuilder, OptionalInt dyeable) {
-        dyeable.ifPresent(defaultColor -> componentBuilder.putCompound("minecraft:dyeable", NbtMap.builder()
-            .putIntArray("default_color", new int[]{(defaultColor & 0xFF0000) >> 16, (defaultColor & 0x00FF00) >> 8, defaultColor & 0xFF})
-            .build()));
     }
 
     private static @Nullable CustomBlockData furnitureBlock(@Nullable Object itemModelData) {
