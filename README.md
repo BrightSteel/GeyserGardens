@@ -1,3 +1,25 @@
+# GeyserGardens
+
+> **This is a fork of [GeyserMC/Geyser](https://github.com/GeyserMC/Geyser), maintained by [@BrightSteel](https://github.com/BrightSteel) for the [GardensMC](https://gardensmc.com) server.** It lets Bedrock Edition players see and use the server's custom blocks, furniture and items, which come from [GardensFurniture](https://github.com/BrightSteel/gardens-furniture). The fork tracks upstream closely and merges new Geyser releases regularly. The original Geyser README follows below.
+
+## What this fork adds
+
+**Custom block and item support for Bedrock players**
+- Renders GardensFurniture custom blocks and items on Bedrock, including held blocks, icon-only blocks and dyeable items ([5ffcc54](../../commit/5ffcc545), [319894f](../../commit/319894fd), [481ff19](../../commit/481ff19f), [fc3c0d3](../../commit/fc3c0d3c))
+- Adds culling geometry support for custom blocks ([17065dc](../../commit/17065dcd))
+- Fixes custom blocks reverting to vanilla after section block updates ([ce0827f](../../commit/ce0827fb))
+- Translates tag badge glyphs to emoji in chat and item text ([a22dfda](../../commit/a22dfdaa))
+- Points the mappings submodule at a [fork with the server's custom biomes](https://github.com/BrightSteel/mappings) ([c731f1a](../../commit/c731f1ac))
+
+**Keeping the fork easy to maintain**
+- Refactored all fork changes into a thin-shim pattern, so the Gardens-specific code lives in a few small hooks and upstream merges stay low-conflict ([e88f7f3](../../commit/e88f7f39))
+
+**Automated deploys**
+- Added a GitHub Actions workflow ([gardens-deploy.yml](.github/workflows/gardens-deploy.yml)) that builds Geyser-Spigot on Java 25 and uploads it over SFTP ([eabcdba](../../commit/eabcdba9), [32026ec](../../commit/32026ec8))
+- The deploy writes into `plugins/update` instead of over the live jar, so the server picks up the new build on its next restart instead of being swapped mid-run ([92b7d16](../../commit/92b7d160))
+
+---
+
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
